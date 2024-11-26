@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=<App_Name>
+Exec=<app-name> %f
+Type=Application
+#Mimetypes=application/pdf
+StartupNotify=true
+Comment=<Wine native app>
+Icon=wine
+StartupWMClass=<App_Name.exe>

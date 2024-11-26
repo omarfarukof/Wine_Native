@@ -1,0 +1,56 @@
+#!/bin/bash
+pkgname="<app_name.sh>"
+_programname="<App_Name>"
+_prog_exe="<App_Name.exe>"
+# _installdir="$prefix/drive_c/Program Files/Tracker Software"
+_programdir="$$prefix/drive_c/<to_path>"
+
+program="$_programname"
+prefix="$HOME/.wine"
+_WINEPATH="/usr/bin/winepath"
+_WINE="/usr/bin/wine"
+_WINEBOOT="/usr/bin/wineboot"
+
+# if [ -z "$XDG_DATA_HOME" ]; then
+#    XDG_DATA_HOME="$HOME/.local/share"
+# fi
+# if [ -d "$HOME/.$pkgname" ] && [ -d "$XDG_DATA_HOME/$pkgname" ]; then
+#    prefix="$XDG_DATA_HOME/$program/wine"
+# else
+#    if [ -d "$HOME/.$pkgname" ] && [ ! -d "$XDG_DATA_HOME/$pkgname" ]; then
+#       prefix="$HOME/.$program/wine"
+#    else
+#       prefix="$XDG_DATA_HOME/$program/wine"
+#    fi
+# fi
+# mkdir -p "$prefix"
+if [ -n "$1" ] ; then
+   document=$(WINEPREFIX="$prefix" $_WINEPATH -w "$1")
+else
+   unset document
+fi
+
+if [ ! -f "$prefix/system.reg" ] || [ ! -f "$prefix/user.reg" ]; then
+   WINEPREFIX="$prefix" $_WINEBOOT
+   while [ ! -f "$prefix/system.reg" ] || [ ! -f "$prefix/user.reg" ]; do
+      echo Waiting...
+   done
+fi
+
+sed -i s/'"CommonFilesDir"="C:\\\\Program Files\\\\Common Files"'/'"CommonFilesDir"="Z:\\\\usr\\\\lib\\\\'"${pkgname}"'\\\\Common Files\"'/g "$prefix/system.reg"
+
+if ! grep -q '"Decorated"="N"' "$prefix/user.reg"; then
+   echo -e "\n[Software\\\\\Wine\\\\\X11 Driver]" >> "$prefix/user.reg"
+   echo '"Decorated"="N"' >> "$prefix/user.reg"
+fi
+
+if ! grep -q '"Graphics"="x11,wayland"' "$prefix/user.reg"; then
+   echo -e "\n[Software\\\\\Wine\\\\\Drivers]" >> "$prefix/user.reg"
+   echo '"Graphics"="x11,wayland"' >> "$prefix/user.reg"
+fi
+
+mkdir "$_programdir/tmp/$pkgname" "$prefix/$pkgname" &>/dev/null
+cp "$prefix"/$pkgname/* "$_programdir/tmp/$pkgname" &>/dev/null
+
+WINEPREFIX="$prefix" $_WINE "$_programdir/$_prog_exe" "$document"
+cp "$_programdir"/tmp/"$pkgname"/* "$prefix/$pkgname"
